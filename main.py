@@ -1,9 +1,10 @@
 from pathlib import Path
 import shutil
+import logging
+ 
+class FileOrganiser:   # class
 
-class FileOrganiser:
-
-    File_Type = {
+    File_Type = {      # types of file we can store
         "Images": [".jpg", ".jpeg", ".png", ".gif","webp"],
         "Documents": [".pdf", ".docx", ".txt"],
         "Videos": [".mp4", ".mov", ".avi"],
@@ -11,12 +12,60 @@ class FileOrganiser:
         "Archives": [".zip", ".rar"]
     }
 
-    def __init__(self, folder_path, file_types=None):
+    def __init__(self, folder_path,dry_run=False, file_types=None):  # this is the constructor of the class
         self.folder = Path(folder_path)
+        self.dry_run= dry_run
         self.file_types = file_types or self.File_Type
+        self._setup_logging()
+
+    def _setup_logging(self): # this function creates the syntax of looging 
+        logging.basicConfig(
+            filename="organizer.log",
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s"
+        )
+        
+    def organize_folder(self):      #this function is like main logic it compliers all the function 
+        if not self.folder.exists():
+            print("Folder does not exist.")
+            self.logging.error("Folder does not exist.")
+            return
+
+        for file in self.folder.iterdir():
+            if not file.is_file():
+                continue
+
+            try:                                        # using try & except for exception handling 
+                extension = file.suffix.lower()
+                category = None
+
+                for folder_name,extensions in self.File_Type.items():
+                    if extension in extensions:
+                        category = folder_name
+                        break
+                if category is None:
+                    category = "others"
+                
+                self.move_file(file,category)
+
+            except Exception as e:
+                logging.error(f"Error processing {file.name}: {e}")
 
 
-    def unique_name(self ,destination,file_name):
+    def move_file(self,file,category):        # this function moves the file from one folder to another folder
+        destination = self.folder / category
+        destination.mkdir(exist_ok=True)
+        new_file_path = self.unique_name(destination,file.name)
+
+        if self.dry_run:
+            print(f"[DRY RUN] Would move {file.name} → {category}")
+            logging.info(f"[DRY RUN] Would move {file.name} → {category}")
+        else:
+            shutil.move(str(file), str(new_file_path))
+            print(f"Moved {file.name} → {category}")
+            logging.info(f"Moved {file.name} → {category}")
+
+    def unique_name(self ,destination,file_name):    # this function makes unquie name for files is same name file is allready present
         counter = 1
         new_path = destination / file_name
 
@@ -28,22 +77,9 @@ class FileOrganiser:
         return new_path
 
 
-    def organize_folder(self):
-        folder = self.folder
-
-        for file in folder.iterdir():
-            if file.is_file():
-                extension = file.suffix.lower()
-
-                for folder_name,extensions in self.File_Type.items():
-                    if extension in extensions:
-                        destination = folder / folder_name
-                        destination.mkdir(exist_ok=True)
-                        new_file_path = self.unique_name(destination,file.name)
-                        shutil.move(str(file),str(new_file_path))
-                        break
-
 
 if __name__ == "__main__":
-    organiser= FileOrganiser("/home/spongebob/Desktop/File_Organizer/Example")
+    organiser= FileOrganiser("/home/spongebob/Desktop/File_Organizer/Example",
+    dry_run=False    #make dry run false for acutally running the program 
+    )
     organiser.organize_folder()
