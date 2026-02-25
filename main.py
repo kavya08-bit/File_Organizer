@@ -1,6 +1,7 @@
 from pathlib import Path
 import shutil
 import logging
+import argparse
  
 class FileOrganiser:   # class
 
@@ -12,11 +13,12 @@ class FileOrganiser:   # class
         "Archives": [".zip", ".rar"]
     }
 
-    def __init__(self, folder_path,dry_run=False, file_types=None):  # this is the constructor of the class
+    def __init__(self, folder_path,dry_run=False,enable_logging=True, file_types=None):  # this is the constructor of the class
         self.folder = Path(folder_path)
         self.dry_run= dry_run
         self.file_types = file_types or self.File_Type
-        self._setup_logging()
+        if enable_logging:
+            self._setup_logging()
 
     def _setup_logging(self): # this function creates the syntax of looging 
         logging.basicConfig(
@@ -78,8 +80,39 @@ class FileOrganiser:   # class
 
 
 
-if __name__ == "__main__":
-    organiser= FileOrganiser("/home/spongebob/Desktop/File_Organizer/Example",
-    dry_run=False    #make dry run false for acutally running the program 
+# if __name__ == "__main__":
+#     organiser= FileOrganiser("/home/spongebob/Desktop/File_Organizer/Example",
+#     dry_run=False    #make dry run false for acutally running the program 
+#     )
+#     organiser.organize_folder()
+
+if __name__ == "__main__":     #making CLI 
+
+    parser = argparse.ArgumentParser(description="Smart File Organizer")
+
+    parser.add_argument(
+        "folder",
+        help="Path to the folder you want to organize"
     )
+
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview changes without moving files"
+    )
+
+    parser.add_argument(
+        "--no-log",
+        action="store_true",
+        help="Disable logging"
+    )
+
+    args = parser.parse_args()
+
+    organiser = FileOrganiser(
+        folder_path=args.folder,
+        dry_run=args.dry_run,
+        enable_logging=not args.no_log
+    )
+
     organiser.organize_folder()
